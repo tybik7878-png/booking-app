@@ -249,7 +249,7 @@
         renderTimeSlots();
     }
 
-    async function submitBooking() {
+    function submitBooking() {
         const date = dateInput.value;
 
         if (!selectedServiceData) {
@@ -261,16 +261,16 @@
             return;
         }
 
-        await saveBookedSlot(date, selectedTime);
-
         const data = {
             service: `${selectedServiceData.name} (${selectedServiceData.price} ₸)`,
             date: date,
             time: selectedTime
         };
 
+        // Отправляем данные боту — он сам всё сохранит в базу!
         tg.sendData(JSON.stringify(data));
     }
+    
 
     fetchBookedSlots();
     </script>
