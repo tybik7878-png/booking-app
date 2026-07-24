@@ -159,80 +159,113 @@
     <button class="main-btn" onclick="submitBooking()">Подтвердить запись</button>
 
     <script>
-        const tg = window.Telegram.WebApp;
-        tg.expand();
+    const tg = window.Telegram.WebApp;
+    tg.expand();
 
-        let selectedServiceData = null;
-        let selectedTime = null;
+    let selectedServiceData = null;
+    let selectedTime = null;
 
-        // Мок занятых слотов (в реальности можно запрашивать с сервера)
-        const bookedSlots = ["10:00", "14:00", "16:30"]; 
-        const availableTimes = ["09:00", "10:00", "11:30", "13:00", "14:00", "15:30", "16:30", "18:00", "19:30"];
+    // Все доступные слоты за день
+    const availableTimes = ["09:00", "10:00", "11:30", "13:00", "14:00", "15:30", "16:30", "18:00", "19:30"];
 
-        // Авто-выбор сегодняшней даты
-        document.getElementById('booking-date').valueAsDate = new Date();
+    // Авто-выбор сегодняшней даты
+    const dateInput = document.getElementById('booking-date');
+    if (!dateInput.value) {
+        dateInput.valueAsDate = new Date();
+    }
 
-        function renderTimeSlots() {
-            const grid = document.getElementById('time-grid');
-            grid.innerHTML = '';
+    // Получаем список уже занятых слотов для выбранной даты
+    function getBookedSlotsForDate(dateStr) {
+        const data = localStorage.getItem('booked_db') || '{}';
+        const db = JSON.parse(data);
+        return db[dateStr] || [];
+    }
 
-            availableTimes.forEach(time => {
-                const btn = document.createElement('div');
-                btn.className = 'time-slot';
-                btn.innerText = time;
-
-                // Проверяем, занято ли время
-                if (bookedSlots.includes(time)) {
-                    btn.classList.add('disabled');
-                    btn.innerText += " (занято)";
-                } else {
-                    btn.onclick = () => selectTime(btn, time);
-                }
-
-                grid.appendChild(btn);
-            });
+    // Сохраняем новый занятый слот
+    function saveBookedSlot(dateStr, timeStr) {
+        const data = localStorage.getItem('booked_db') || '{}';
+        const db = JSON.parse(data);
+        
+        if (!db[dateStr]) {
+            db[dateStr] = [];
         }
-
-        function selectService(element, name, price) {
-            document.querySelectorAll('.service-card').forEach(el => el.classList.remove('selected'));
-            element.classList.add('selected');
-            selectedServiceData = { name, price };
+        
+        if (!db[dateStr].includes(timeStr)) {
+            db[dateStr].push(timeStr);
         }
+        
+        localStorage.setItem('booked_db', JSON.stringify(db));
+    }
 
-        function selectTime(element, time) {
-            document.querySelectorAll('.time-slot').forEach(el => el.classList.remove('selected'));
-            element.classList.add('selected');
-            selectedTime = time;
-        }
+    function renderTimeSlots() {
+        const grid = document.getElementById('time-grid');
+        grid.innerHTML = '';
+        
+        const currentDate = dateInput.value;
+        const bookedSlots = getBookedSlotsForDate(currentDate);
 
-        function onDateChange() {
-            // При смене даты можно перерисовывать слоты
-            renderTimeSlots();
-        }
+        selectedTime = null; // Сбрасываем выбранное время при перерисовке
 
-        function submitBooking() {
-            const date = document.getElementById('booking-date').value;
+        availableTimes.forEach(time => {
+            const btn = document.createElement('div');
+            btn.className = 'time-slot';
+            btn.innerText = time;
 
-            if (!selectedServiceData) {
-                alert("Пожалуйста, выберите услугу!");
-                return;
-            }
-            if (!selectedTime) {
-                alert("Пожалуйста, выберите время!");
-                return;
+            // Если время уже занято на эту дату
+            if (bookedSlots.includes(time)) {
+                btn.classList.add('disabled');
+                btn.innerText += " (занято)";
+            } else {
+                btn.onclick = () => selectTime(btn, time);
             }
 
-            const data = {
-                service: `${selectedServiceData.name} (${selectedServiceData.price} ₸)`,
-                date: date,
-                time: selectedTime
-            };
+            grid.appendChild(btn);
+        });
+    }
 
-            tg.sendData(JSON.stringify(data));
-        }
+    function selectService(element, name, price) {
+        document.querySelectorAll('.service-card').forEach(el => el.classList.remove('selected'));
+        element.classList.add('selected');
+        selectedServiceData = { name, price };
+    }
 
-        // Инициализация
+    function selectTime(element, time) {
+        document.querySelectorAll('.time-slot').forEach(el => el.classList.remove('selected'));
+        element.classList.add('selected');
+        selectedTime = time;
+    }
+
+    function onDateChange() {
         renderTimeSlots();
-    </script>
+    }
+
+    function submitBooking() {
+        const date = dateInput.value;
+
+        if (!selectedServiceData) {
+            alert("Пожалуйста, выберите услугу!");
+            return;
+        }
+        if (!selectedTime) {
+            alert("Пожалуйста, выберите свободное время!");
+            return;
+        }
+
+        // Блокируем этот слот локально
+        saveBookedSlot(date, selectedTime);
+
+        const data = {
+            service: `${selectedServiceData.name} (${selectedServiceData.price} ₸)`,
+            date: date,
+            time: selectedTime
+        };
+
+        // Отправляем данные боту и закрываем WebApp
+        tg.sendData(JSON.stringify(data));
+    }
+
+    // Первичная отрисовка при запуске
+    renderTimeSlots();
+</script>
 </body>
 </html>
