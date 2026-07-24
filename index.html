@@ -40,7 +40,7 @@
     /* Карточки услуг */
     .services-grid { display: flex; flex-direction: column; gap: 10px; }
     .service-card {
-        background: #242f3d; /* Тёмный аккуратный фон */
+        background: #242f3d;
         border: 2px solid #2b394a;
         border-radius: 12px;
         padding: 12px 16px;
@@ -161,7 +161,8 @@
     const tg = window.Telegram.WebApp;
     tg.expand();
 
-    const JSON_URL = 'https://api.jsonstorage.net/v1/json/D9991C5A-3EFE-4C97-9238-E45396D5CF21'; 
+    // Ссылка на файл bookings.json в вашем GitHub репозитории
+    const JSON_URL = 'https://raw.githubusercontent.com/tybik7878-png/booking-app/main/bookings.json'; 
 
     let selectedServiceData = null;
     let selectedTime = null;
@@ -174,37 +175,18 @@
         dateInput.valueAsDate = new Date();
     }
 
-    // 1. Читаем занятые слоты
+    // 1. Читаем занятые слоты из GitHub
     async function fetchBookedSlots() {
         try {
-            const response = await fetch(JSON_URL);
-            currentBookings = await response.json();
+            // ?t=Date.now() гарантирует, что браузер скачивает с GitHub самый свежий файл
+            const response = await fetch(JSON_URL + '?t=' + Date.now());
+            if (response.ok) {
+                currentBookings = await response.json();
+            }
             renderTimeSlots();
         } catch (error) {
             console.error('Ошибка загрузки слотов:', error);
             renderTimeSlots();
-        }
-    }
-
-    // 2. Сохраняем новую бронь
-    async function saveBookedSlot(dateStr, timeStr) {
-        if (!currentBookings[dateStr]) {
-            currentBookings[dateStr] = [];
-        }
-        if (!currentBookings[dateStr].includes(timeStr)) {
-            currentBookings[dateStr].push(timeStr);
-        }
-
-        try {
-            await fetch(JSON_URL, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(currentBookings)
-            });
-        } catch (error) {
-            console.error('Ошибка сохранения:', error);
         }
     }
 
@@ -222,6 +204,7 @@
             btn.className = 'time-slot';
             btn.innerText = time;
 
+            // Если время забронировано — блокируем его
             if (bookedSlots.includes(time)) {
                 btn.classList.add('disabled');
                 btn.innerText += " (занято)";
@@ -267,10 +250,9 @@
             time: selectedTime
         };
 
-        // Отправляем данные боту — он сам всё сохранит в базу!
+        // Отправляем данные боту — он сам всё сохранит в GitHub!
         tg.sendData(JSON.stringify(data));
     }
-    
 
     fetchBookedSlots();
     </script>
