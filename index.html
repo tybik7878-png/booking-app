@@ -3,127 +3,235 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Запись на услугу</title>
+    <title>Онлайн Запись</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
+        :root {
+            --bg-color: var(--tg-theme-bg-color, #f4f4f9);
+            --text-color: var(--tg-theme-text-color, #222);
+            --hint-color: var(--tg-theme-hint-color, #888);
+            --button-color: var(--tg-theme-button-color, #3390ec);
+            --button-text: var(--tg-theme-button-text-color, #fff);
+            --card-bg: #ffffff;
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--tg-theme-bg-color, #ffffff);
-            color: var(--tg-theme-text-color, #000000);
-            padding: 16px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
             margin: 0;
-        }
-        h2 { margin-top: 0; }
-        .block { margin-bottom: 20px; }
-        label { display: block; margin-bottom: 8px; font-weight: bold; }
-        select, input {
-            width: 100%;
-            padding: 10px;
-            border-radius: 8px;
-            border: 1px solid #ccc;
+            padding: 16px;
             box-sizing: border-box;
-            background: var(--tg-theme-secondary-bg-color, #f0f0f0);
-            color: var(--tg-theme-text-color, #000);
         }
-        .slots {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-            margin-top: 10px;
+
+        /* Шапка с информацией */
+        .header-card {
+            background: linear-gradient(135deg, #3390ec, #0066cc);
+            color: white;
+            padding: 16px;
+            border-radius: 16px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(51, 144, 236, 0.2);
         }
-        .slot-btn {
-            padding: 10px;
-            border: 1px solid #007bff;
-            border-radius: 8px;
-            background: transparent;
-            color: #007bff;
-            font-weight: bold;
+
+        .header-card h2 { margin: 0 0 6px 0; font-size: 20px; }
+        .header-info { font-size: 13px; opacity: 0.9; line-height: 1.4; }
+        .header-info span { display: block; margin-top: 4px; }
+
+        h3 { font-size: 16px; margin: 16px 0 10px 0; }
+
+        /* Услуги */
+        .services-grid { display: flex; flex-direction: column; gap: 10px; }
+        .service-card {
+            background: var(--card-bg);
+            border: 2px solid transparent;
+            border-radius: 12px;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+        }
+
+        .service-card.selected {
+            border-color: var(--button-color);
+            background-color: rgba(51, 144, 236, 0.05);
+        }
+
+        .service-name { font-weight: 600; font-size: 15px; }
+        .service-price { color: var(--button-color); font-weight: bold; font-size: 14px; }
+
+        /* Выбор даты и времени */
+        input[type="date"] {
+            width: 100%;
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid #ccc;
+            font-size: 15px;
+            box-sizing: border-box;
+            background: var(--card-bg);
+            color: var(--text-color);
+        }
+
+        .time-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
+        .time-slot {
+            background: var(--card-bg);
+            border: 1px solid #ddd;
+            padding: 10px;
             text-align: center;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.2s;
         }
-        .slot-btn.selected {
-            background: #007bff;
-            color: #fff;
+
+        .time-slot.selected {
+            background: var(--button-color);
+            color: var(--button-text);
+            border-color: var(--button-color);
         }
-        .slot-btn.disabled {
-            border-color: #ccc;
-            color: #ccc;
+
+        /* Занятый слот */
+        .time-slot.disabled {
+            background: #e0e0e0;
+            color: #a0a0a0;
+            border-color: #d0d0d0;
             cursor: not-allowed;
+            text-decoration: line-through;
+        }
+
+        .main-btn {
+            width: 100%;
+            background: var(--button-color);
+            color: var(--button-text);
+            border: none;
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            margin-top: 24px;
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
 
-    <h2>📅 Онлайн-запись</h2>
-
-    <!-- Выбор услуги -->
-    <div class="block">
-        <label for="service">Выберите услугу:</label>
-        <select id="service">
-            <option value="Мужская стрижка — 5000 ₸">Мужская стрижка (5000 ₸)</option>
-            <option value="Оформление бороды — 3000 ₸">Оформление бороды (3000 ₸)</option>
-            <option value="Комплекс (Стрижка + Борода) — 7000 ₸">Комплекс (7000 ₸)</option>
-        </select>
-    </div>
-
-    <!-- Выбор даты -->
-    <div class="block">
-        <label for="date">Дата:</label>
-        <input type="date" id="date">
-    </div>
-
-    <!-- Выбор времени -->
-    <div class="block">
-        <label>Свободное время:</label>
-        <div class="slots" id="slots-container">
-            <button class="slot-btn" onclick="selectSlot(this)">10:00</button>
-            <button class="slot-btn" onclick="selectSlot(this)">11:30</button>
-            <button class="slot-btn" onclick="selectSlot(this)">13:00</button>
-            <button class="slot-btn" onclick="selectSlot(this)">14:30</button>
-            <button class="slot-btn" onclick="selectSlot(this)">16:00</button>
-            <button class="slot-btn" onclick="selectSlot(this)">17:30</button>
+    <!-- Инфо-шапка -->
+    <div class="header-card">
+        <h2>💈 Barber & Studio</h2>
+        <div class="header-info">
+            📍 г. Актюбинск, ул. Абилкайыр Хана, 42<br>
+            🕒 Режим работы: <b>08:00 – 22:00</b> (без выходных)
         </div>
     </div>
+
+    <!-- 1. Выбор услуги -->
+    <h3>1. Выберите услугу</h3>
+    <div class="services-grid">
+        <div class="service-card" onclick="selectService(this, 'Мужская стрижка', 4000)">
+            <span class="service-name">✂️ Мужская стрижка</span>
+            <span class="service-price">4 000 ₸</span>
+        </div>
+        <div class="service-card" onclick="selectService(this, 'Оформление бороды', 2500)">
+            <span class="service-name">🧔 Оформление бороды</span>
+            <span class="service-price">2 500 ₸</span>
+        </div>
+        <div class="service-card" onclick="selectService(this, 'Комплекс (Стрижка + Борода)', 6000)">
+            <span class="service-name">🔥 Комплекс (Стрижка + Борода)</span>
+            <span class="service-price">6 000 ₸</span>
+        </div>
+    </div>
+
+    <!-- 2. Выбор даты -->
+    <h3>2. Выберите дату</h3>
+    <input type="date" id="booking-date" onchange="onDateChange()">
+
+    <!-- 3. Выбор времени -->
+    <h3>3. Доступное время</h3>
+    <div class="time-grid" id="time-grid">
+        <!-- Заполняется динамически -->
+    </div>
+
+    <button class="main-btn" onclick="submitBooking()">Подтвердить запись</button>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        // По умолчанию ставим сегодняшнюю дату
-        document.getElementById('date').valueAsDate = new Date();
-
+        let selectedServiceData = null;
         let selectedTime = null;
 
-        function selectSlot(btn) {
-            if (btn.classList.contains('disabled')) return;
-            
-            document.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('selected'));
-            btn.classList.add('selected');
-            selectedTime = btn.innerText;
+        // Мок занятых слотов (в реальности можно запрашивать с сервера)
+        const bookedSlots = ["10:00", "14:00", "16:30"]; 
+        const availableTimes = ["09:00", "10:00", "11:30", "13:00", "14:00", "15:30", "16:30", "18:00", "19:30"];
 
-            // Показываем главную кнопку Telegram
-            tg.MainButton.text = "ПОДТВЕРДИТЬ ЗАПИСЬ";
-            tg.MainButton.show();
+        // Авто-выбор сегодняшней даты
+        document.getElementById('booking-date').valueAsDate = new Date();
+
+        function renderTimeSlots() {
+            const grid = document.getElementById('time-grid');
+            grid.innerHTML = '';
+
+            availableTimes.forEach(time => {
+                const btn = document.createElement('div');
+                btn.className = 'time-slot';
+                btn.innerText = time;
+
+                // Проверяем, занято ли время
+                if (bookedSlots.includes(time)) {
+                    btn.classList.add('disabled');
+                    btn.innerText += " (занято)";
+                } else {
+                    btn.onclick = () => selectTime(btn, time);
+                }
+
+                grid.appendChild(btn);
+            });
         }
 
-        // Отправка данных в бота при клике на главную кнопку Telegram
-        tg.onEvent('mainButtonClicked', function() {
-            const service = document.getElementById('service').value;
-            const date = document.getElementById('date').value;
+        function selectService(element, name, price) {
+            document.querySelectorAll('.service-card').forEach(el => el.classList.remove('selected'));
+            element.classList.add('selected');
+            selectedServiceData = { name, price };
+        }
 
+        function selectTime(element, time) {
+            document.querySelectorAll('.time-slot').forEach(el => el.classList.remove('selected'));
+            element.classList.add('selected');
+            selectedTime = time;
+        }
+
+        function onDateChange() {
+            // При смене даты можно перерисовывать слоты
+            renderTimeSlots();
+        }
+
+        function submitBooking() {
+            const date = document.getElementById('booking-date').value;
+
+            if (!selectedServiceData) {
+                alert("Пожалуйста, выберите услугу!");
+                return;
+            }
             if (!selectedTime) {
                 alert("Пожалуйста, выберите время!");
                 return;
             }
 
             const data = {
-                service: service,
+                service: `${selectedServiceData.name} (${selectedServiceData.price} ₸)`,
                 date: date,
                 time: selectedTime
             };
 
             tg.sendData(JSON.stringify(data));
-        });
+        }
+
+        // Инициализация
+        renderTimeSlots();
     </script>
 </body>
 </html>
