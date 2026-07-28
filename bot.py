@@ -24,8 +24,6 @@ bot = TeleBot(TOKEN)
 # === РАБОТА С GITHUB API ===
 def save_booking_to_github(date_str, time_str):
     url = f"https://api.github.com/repos/{REPO_NAME}/contents/{FILE_PATH}"
-
-    # Использование Bearer и User-Agent для стабильной работы API GitHub
     headers = {
         "Authorization": f"Bearer {GITHUB_TOKEN}",
         "Accept": "application/vnd.github+json",
@@ -76,9 +74,12 @@ def save_booking_to_github(date_str, time_str):
 
 
 # === КОМАНДЫ БОТА ===
+
 @bot.message_handler(commands=["start"])
 def start(message):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    
+    # Кнопка WebApp в обычной клавиатуре
     web_app_btn = types.KeyboardButton(
         text="📅 Записаться на услугу",
         web_app=types.WebAppInfo(url=WEB_APP_URL),
@@ -134,6 +135,7 @@ def send_contacts(message):
 
 
 # === ОБРАБОТКА ДАННЫХ ИЗ WEB APP ===
+
 @bot.message_handler(content_types=["web_app_data"])
 def handle_web_app_data(message):
     try:
@@ -185,4 +187,12 @@ def handle_web_app_data(message):
 
 if __name__ == "__main__":
     print("Бот запущен...")
+    
+    # Сбрасываем старые зависшие соединения/вебхуки перед запуском
+    try:
+        bot.remove_webhook()
+    except Exception as e:
+        print("Очистка соединения:", e)
+
     bot.infinity_polling(skip_pending=True, timeout=60)
+  
